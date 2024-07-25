@@ -1,0 +1,51 @@
+from PIL import Image
+import os
+Image.MAX_IMAGE_PIXELS = None
+
+def resize_and_orient_images(folder_path, folder_save, width_mm, height_mm, dpi=300, cut=False):
+    # Конвертация размеров из мм в пиксели
+    width_px = int(width_mm / 25.4 * dpi)
+    height_px = int(height_mm / 25.4 * dpi)
+
+    # Обход всех файлов в заданной папке
+    for filename in os.listdir(folder_path):
+        if filename.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp')):
+            full_path = os.path.join(folder_path, filename)
+            with Image.open(full_path) as img:
+                # Ориентация изображения для максимального размера
+                if img.width < img.height:
+                    img = img.rotate(90, expand=True)
+
+                    # Вычисление нового размера с сохранением пропорций
+                    ratio_width = width_px / img.width
+                    ratio_height = height_px / img.height
+                    if ratio_width > ratio_height:
+                        new_width = width_px
+                        new_height = int(img.height * ratio_width)
+                    else:
+                        new_width = int(img.width * ratio_height)
+                        new_height = height_px
+
+                # Изменение размера изображения
+                img_resized = img.resize((new_width, new_height), Image.LANCZOS)
+
+                # Обрезка изображения для заполнения заданных размеров
+                if cut:
+                    start_x = max(0, (new_width - width_px) // 2)
+                    start_y = max(0, (new_height - height_px) // 2)
+                    img_resized = img_resized.crop((start_x, start_y, start_x + width_px, start_y + height_px))
+
+                # Центрирование изображения, если оно меньше указанного размера
+                if new_width < width_px or new_height < height_px:
+                    new_img = Image.new("RGB", (width_px, height_px))
+                    upper_left_x = (width_px - new_width) // 2
+                    upper_left_y = (height_px - new_height) // 2
+                    new_img.paste(img_resized, (upper_left_x, upper_left_y))
+                    img_resized = new_img
+
+                # Сохранение результата
+                img_resized.save(os.path.join(folder_save, filename))
+
+
+# Параметры: путь к папке, ширина и высота в мм, разрешение в dpi, флаг cut
+resize_and_orient_images('images', 'to_save', 120, 80, 300, cut=True)
