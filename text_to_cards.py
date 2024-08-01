@@ -8,9 +8,9 @@ def try_set_custom_font(font_path, font_size):
         # Попытка загрузить шрифт из файла
         custom_font = ImageFont.truetype(font_path, font_size)
         return custom_font
-    except IOError:
+    except (IOError, OSError) as e:
         # Файл шрифта не найден, возвращаем None
-        return ImageFont.load_default(font_size)
+        return ImageFont.load_default()
 
 
 def calculate_text_parameters(font_path, text, image_size, initial_font_size=194):

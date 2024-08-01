@@ -1,7 +1,8 @@
-import fitz  # з
+import fitz
 import os
 
-def pdf_to_images_mupdf(pdf_path, output_folder=".", first=1, last=-1,step =1, dpi=200):
+
+def pdf_to_images_mupdf(pdf_path, output_folder=".", first=1, last=-1, step=1, dpi=200):
     """
     Convert each page of a PDF file into separate images using PyMuPDF.
 
@@ -15,7 +16,7 @@ def pdf_to_images_mupdf(pdf_path, output_folder=".", first=1, last=-1,step =1, d
     # Ensure output folder exists
     if not os.path.exists(output_folder):
         os.makedirs(output_folder)
-    #get pdf pages
+    # get pdf pages
     if last == -1:
         last = len(doc)
     tt = list(range(len(doc)))
@@ -31,10 +32,8 @@ def pdf_to_images_mupdf(pdf_path, output_folder=".", first=1, last=-1,step =1, d
     # Close the document
     doc.close()
 
-
-
 # Пример использования функции
-#pdf_file_path = "create_pdf_1.pdf"
+# pdf_file_path = "create_pdf_1.pdf"
 
 # Example usage
-#pdf_to_images_mupdf(pdf_file_path)
+# pdf_to_images_mupdf(pdf_file_path)

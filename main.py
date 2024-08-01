@@ -5,11 +5,7 @@ import os
 from image_hadler import image_handler
 from pdf_to_images import pdf_to_images_mupdf
 from text_to_cards import place_text_on_image
-from PIL import Image
 from images_into_cards import resize_and_orient_images
-
-
-# создание папки для сохранения сжатых
 
 
 # расстанока картинок в pdf
@@ -91,15 +87,15 @@ margin_entry.grid(row=3, column=1, sticky="ew")
 
 tk.Label(tab1, text="Равномерный макс. отступ").grid(row=4, column=0, sticky="w")
 max_sep_checkbox = tk.BooleanVar()
-max_sep_сheckbutton = tk.Checkbutton(tab1, variable=max_sep_checkbox)
+max_sep_checkbutton = tk.Checkbutton(tab1, variable=max_sep_checkbox)
 max_sep_checkbox.set(True)
-max_sep_сheckbutton.grid(row=4, column=1, sticky="ew")
+max_sep_checkbutton.grid(row=4, column=1, sticky="ew")
 
 
 def select_source_folder(entry):
-    global save_folder_path
-    folder_selected = filedialog.askdirectory(initialdir=os.getcwd())
-    entry.set(folder_selected)
+    folder_selected = filedialog.askdirectory(initialdir=entry.get())
+    if folder_selected != "":
+        entry.set(folder_selected)
     tab_name = tabControl.tab(tabControl.index("current"), "text")
     end_path = ""
     if tab_name == 'Картиинки в PDF':
@@ -112,13 +108,14 @@ def select_source_folder(entry):
         end_path = ""
     elif tab_name == "Вписать картинки":
         end_path = "formated_images"
-    to_save_folder = os.path.join(folder_selected, end_path)
+    to_save_folder = os.path.join(entry.get(), end_path)
     save_folder_path.set(to_save_folder)
 
 
 def select_folder(entry):
-    folder_selected = filedialog.askdirectory(initialdir=os.getcwd())
-    entry.set(folder_selected)
+    folder_selected = filedialog.askdirectory(initialdir=entry.get())
+    if folder_selected != "":
+        entry.set(folder_selected)
 
 
 def tab2_handler():
@@ -131,7 +128,7 @@ def tab2_handler():
         return
     try:
         image_handler(folder_path, save_folder, brightness_level=brightness_level_entry.get(),
-                      contrast_level=compression_level_entry.get(), saturation_level=saturation_level_entry.get(),
+                      contrast_level=contrast_level_entry.get(), saturation_level=saturation_level_entry.get(),
                       compression_level=compression_level_entry.get(), operation=operation_menu.get())
         messagebox.showinfo("Готово", "Обработка успешно выполнена!")
     except Exception as e:
@@ -212,8 +209,13 @@ step_entry.grid(row=3, column=1, sticky="ew")
 # Вкладка 4: Текст на карточки
 def select_font_path():
     initial_dir = os.getcwd()  # Текущая директория приложения
-    font_path.set(filedialog.askopenfilename(initialdir=initial_dir,
-                                             filetypes=[("Font files", "*.ttf *.otf"), ("All files", "*.*")]))
+    if font_path.get() != "":
+        initial_dir = font_path.get()
+
+    folder_selected = filedialog.askopenfilename(initialdir=initial_dir,
+                                                 filetypes=[("Font files", "*.ttf *.otf"), ("All files", "*.*")])
+    if folder_selected != "":
+        font_path.set(folder_selected)
 
 
 def submit_data():
@@ -221,9 +223,10 @@ def submit_data():
 
     main_text = text_input.get("1.0", tk.END)
     ls = main_text.split("\n")
-    colors = {"белый": "#ffffff", "черный": "#000000", "серый": "#C0C0C0", "красный": "#fe0000", "оранжевый": "#ff7513",
-              "желтый": "#ffcc00", "зеленый": "#019934", "голубой": "#00FFFF", "синий": "#3401cc",
-              "фиолетовый": "#990099", "коричневый": "#8B4513", "розовый": "#FFC0CB"}
+    my_colors = {"белый": "#ffffff", "черный": "#000000", "серый": "#C0C0C0", "красный": "#fe0000",
+                 "оранжевый": "#ff7513",
+                 "желтый": "#ffcc00", "зеленый": "#019934", "голубой": "#00FFFF", "синий": "#3401cc",
+                 "фиолетовый": "#990099", "коричневый": "#8B4513", "розовый": "#FFC0CB"}
 
     # Пример использования
     counter = 0
@@ -232,8 +235,8 @@ def submit_data():
             counter += 1
             place_text_on_image((image_width.get(), image_height.get()), text_string, counter,
                                 font_path=font_path.get(), initial_font_size=max_font_size.get(),
-                                save_path=save_folder_path.get(), bg_color=colors[bg_color_combobox.get()],
-                                text_color=colors[text_color_combobox.get()], name_prefix=name_prefix.get())
+                                save_path=save_folder_path.get(), bg_color=my_colors[bg_color_combobox.get()],
+                                text_color=my_colors[text_color_combobox.get()], name_prefix=name_prefix.get())
     messagebox.showinfo("Успех")
 
 
@@ -258,7 +261,6 @@ font_path = tk.StringVar()
 max_font_size = tk.IntVar(value=200)
 image_width = tk.IntVar(value=900)
 image_height = tk.IntVar(value=600)
-save_folder_path = tk.StringVar(value=os.getcwd())
 repeat_times = tk.IntVar(value=1)
 name_prefix = tk.StringVar(value="name")
 colors = ["белый", "черный", "серый", "красный", "оранжевый", "желтый", "зеленый", "голубой", "синий", "фиолетовый",
@@ -335,8 +337,8 @@ cards_height_entry.grid(row=1, column=1, sticky="ew")
 
 tk.Label(tab6, text="На весь размер (обрезать):").grid(row=2, column=0, sticky="w")
 cut_images = tk.BooleanVar()
-сheckbutton = tk.Checkbutton(tab6, variable=cut_images)
-сheckbutton.grid(row=2, column=1, sticky="w")
+checkbutton = tk.Checkbutton(tab6, variable=cut_images)
+checkbutton.grid(row=2, column=1, sticky="w")
 
 
 #  общий фрейм

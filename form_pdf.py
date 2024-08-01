@@ -4,7 +4,7 @@ from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.units import mm
 from reportlab.lib.colors import black
-import imghdr
+from images_into_cards import is_image
 
 
 #  create_pdf(directory, width, height, output_path='.', file_name='create_pdf', separation=1, margin=5)
@@ -53,6 +53,14 @@ def mm_to_pixels(mm, dpi=300):
 
 def resize_image(image_file, width_mm, height_mm, dpi=300):
     with Image.open(image_file) as img:
+
+        if img.mode in ('RGBA', 'LA') or (img.mode == 'P' and 'transparency' in img.info):
+            # Создаем новое изображение с белым фоном и теми же размерами
+            background = Image.new("RGB", img.size, (255, 255, 255))
+            # Накладываем изображение на белый фон
+            background.paste(img, mask=img.split()[3])  # Маска прозрачности - альфа канал
+            img = background
+
         # Конвертируем размеры из мм в пиксели
         width_px = mm_to_pixels(width_mm, dpi)
         height_px = mm_to_pixels(height_mm, dpi)
@@ -60,7 +68,7 @@ def resize_image(image_file, width_mm, height_mm, dpi=300):
         # Проверяем текущие размеры изображения
         if img.size[0] != width_px or img.size[1] != height_px:
             # Изменяем размер изображения с высоким качеством
-            img = img.resize((width_px, height_px), Image.Resampling.LANCZOS)
+            img = img.resize((width_px, height_px), Image.LANCZOS)
             temp_file = f'temp_{os.path.basename(image_file)}'
             img.save(temp_file)
             return temp_file
@@ -69,7 +77,8 @@ def resize_image(image_file, width_mm, height_mm, dpi=300):
             return image_file
 
 
-def draw_grid(c, a4_width, a4_height, width_pts, height_pts, separation_pts, width_margin_pts, height_margin_pts, linewidth):
+def draw_grid(c, a4_width, a4_height, width_pts, height_pts, separation_pts, width_margin_pts, height_margin_pts,
+              linewidth):
     if separation_pts > 0:
         # Вертикальные линии
         current_x = width_margin_pts
@@ -89,8 +98,8 @@ def draw_grid(c, a4_width, a4_height, width_pts, height_pts, separation_pts, wid
 
 
 def create_pdf_new(directory, width, height, output_path='.', file_name='create_pdf', separation=1, margin=5):
-    print(
-        f"directory{directory}, width{width}, height{height}, output_path={output_path}, file_name={file_name}, separation={separation}, margin={margin}")
+    # print(
+    #    f"directory{directory}, width{width}, height{height}, output_path={output_path}, file_name={file_name}, separation={separation}, margin={margin}")
     image_files = get_files_with_full_paths(directory)
     file_name = update_file_name(file_name, output_path)
     a4_width, a4_height = A4
@@ -124,19 +133,9 @@ def create_pdf_new(directory, width, height, output_path='.', file_name='create_
     c.save()
 
 
-def is_image(file_path):
-    # Проверяем, существует ли файл
-    if not os.path.isfile(file_path):
-        return False
-
-    # Проверяем MIME-тип файла
-    image_type = imghdr.what(file_path)
-    return image_type is not None
-
-
 def create_pdf_old(directory, width, height, output_path='.', file_name='create_pdf', separation=1, margin=5):
-    print(
-        f"directory{directory}, width{width}, height{height}, output_path={output_path}, file_name={file_name}, separation={separation}, margin={margin}")
+    # print(
+    #    f"directory{directory}, width{width}, height{height}, output_path={output_path}, file_name={file_name}, separation={separation}, margin={margin}")
     image_files = get_files_with_full_paths(directory)
     file_name = update_file_name(file_name, output_path)
     a4_width, a4_height = A4
@@ -166,9 +165,10 @@ def create_pdf_old(directory, width, height, output_path='.', file_name='create_
     c.save()
 
 
-def create_pdf(directory, width, height, output_path='.', file_name='create_pdf', separation=1, margin=5,max_separation=True):
-    print(
-        f"directory{directory}, width{width}, height{height}, output_path={output_path}, file_name={file_name}, separation={separation}, margin={margin}")
+def create_pdf(directory, width, height, output_path='.', file_name='create_pdf', separation=1, margin=5,
+               max_separation=True):
+    # print(
+    #   f"directory{directory}, width{width}, height{height}, output_path={output_path}, file_name={file_name}, separation={separation}, margin={margin}")
     image_files = get_files_with_full_paths(directory)
     file_name = update_file_name(file_name, output_path)
     a4_width, a4_height = A4
@@ -177,8 +177,6 @@ def create_pdf(directory, width, height, output_path='.', file_name='create_pdf'
     height_pts = height * mm
     separation_pts = separation * mm
     c = canvas.Canvas(os.path.join(output_path, f"{file_name}.pdf"), pagesize=A4)
-
-
 
     if max_separation:
         ww = margin_pts * 2 + separation_pts
@@ -199,9 +197,7 @@ def create_pdf(directory, width, height, output_path='.', file_name='create_pdf'
         height_margin_pts = margin_pts
         width_margin_pts = margin_pts
 
-
     x, y = width_margin_pts, a4_height - height_pts - height_margin_pts
-
 
     for image_file in image_files:
         if not is_image(image_file):
@@ -211,14 +207,16 @@ def create_pdf(directory, width, height, output_path='.', file_name='create_pdf'
             x = width_margin_pts
             y -= (height_pts + separation_pts)
             if y < height_margin_pts:
-                draw_grid(c, a4_width, a4_height, width_pts, height_pts, separation_pts, width_margin_pts, height_margin_pts, separation)
+                draw_grid(c, a4_width, a4_height, width_pts, height_pts, separation_pts, width_margin_pts,
+                          height_margin_pts, separation)
                 c.showPage()
                 y = a4_height - height_pts - height_margin_pts
         c.drawImage(temp_file, x, y, width=width_pts, height=height_pts)
         os.remove(temp_file)
         x += width_pts + separation_pts
 
-    draw_grid(c, a4_width, a4_height, width_pts, height_pts, separation_pts, width_margin_pts, height_margin_pts, separation)
+    draw_grid(c, a4_width, a4_height, width_pts, height_pts, separation_pts, width_margin_pts, height_margin_pts,
+              separation)
     c.save()
 #  create_pdf(directory, width, height, output_path='.', file_name='create_pdf', separation=1, margin=5)
 #
