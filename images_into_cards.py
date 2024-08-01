@@ -34,14 +34,21 @@ def resize_and_rotate_to_fit(image_path, target_width, target_height, cut=False)
         # Изменение размера изображения
         resized_img = img.resize((new_width, new_height), Image.LANCZOS)
 
+        if resized_img.mode == 'RGB':
+            print("mode rgb")
+            # Convert RGB image to RGBA
+            resized_img = resized_img.convert('RGBA')
+
         # Создание нового изображения с заданным размером
-        new_img = Image.new('RGBA', (target_width, target_height))
+        new_img = Image.new('RGBA', (target_width, target_height),(255,255,255))
         # Вычисление позиции вставки измененного изображения
         x_offset = (target_width - new_width) // 2
         y_offset = (target_height - new_height) // 2
         # Вставка изображения
-        new_img.paste(resized_img, (x_offset, y_offset))
-
+        print("before_paste")
+        new_img.paste(resized_img, (x_offset, y_offset), resized_img)
+        new_img = new_img.convert("RGB")
+        print("after_paste")
     return new_img
 
 
@@ -51,6 +58,6 @@ def resize_and_orient_images(folder_path, save_path, new_width_mm, new_height_mm
         if is_image(image_path):
             img = resize_and_rotate_to_fit(image_path, new_width_mm * 10, new_height_mm * 10, cut=cut)
             img.save(os.path.join(save_path, filename))
-            print(f'Processed {filename}')
+
 
 

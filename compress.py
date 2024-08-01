@@ -1,35 +1,57 @@
 from PIL import Image
 import os
+from PIL import Image, ImageEnhance
+from images_into_cards import is_image
 
 
-def compress_images(source_folder, output_folder, compression_level):
-    """
-    Compress all JPEG and PNG images in the source folder with the specified compression level.
+def image_setting(image_path, brightness_level, contrast_level, saturation_level, operation):
+    # Открываем изображение
+    image = Image.open(image_path)
 
-    :param source_folder: Path to the folder containing the images.
-    :param output_folder: Path to the folder where the compressed images will be saved.
-    :param compression_level: Compression level (1-10), where 10 is the highest compression.
-    """
-    # Ensure output folder exists
-    if not os.path.exists(output_folder):
-        os.makedirs(output_folder)
+    if brightness_level:
+        # Приводим уровень яркости к диапазону от 1 до 2, где 1 — без изменений, 2 — удвоенная яркость
+        brightness_factor = 1 + (brightness_level / 100)
+        # Создаем объект для изменения яркости
+        enhancer = ImageEnhance.Brightness(image)
+        # Применяем изменение яркости
+        image = enhancer.enhance(brightness_factor)
+    if contrast_level:
+        # Приводим уровень контрастности к диапазону от 1 до 2, где 1 — без изменений, 2 — максимальное повышение контрастности
+        contrast_factor = 1 + (contrast_level / 100)
+        # Создаем объект для изменения контрастности
+        enhancer = ImageEnhance.Contrast(image)
+        # Применяем изменение контрастности
+        image = enhancer.enhance(contrast_factor)
+    if saturation_level:
+        # Приводим уровень контрастности к диапазону от 1 до 2, где 1 — без изменений, 2 — максимальное повышение контрастности
+        saturation_factor = 1 + (saturation_level / 100)
+        # Создаем объект для изменения контрастности
+        enhancer = ImageEnhance.Color(image)
+        # Применяем изменение контрастности
+        image = enhancer.enhance(saturation_factor)
 
-    # Adjust compression level for Pillow
-    quality = int((1 - (compression_level / 10)) * 95) + 5  # Scale between 5 and 95
+    if operation == '90':
+        image = image.rotate(90, expand=True)
+    elif operation == '180':
+        image = image.rotate(180, expand=True)
+    elif operation == '270':
+        image = image.rotate(270, expand=True)
+    elif operation == 'отр. по гориз.':
+        image = image.transpose(Image.FLIP_LEFT_RIGHT)
+    elif operation == 'отр. по верт.':
+        image = image.transpose(Image.FLIP_TOP_BOTTOM)
 
-    # Process each file in the source folder
-    for filename in os.listdir(source_folder):
-        if filename.lower().endswith(('.jpg', '.jpeg', '.png')):
-            with Image.open(os.path.join(source_folder, filename)) as img:
-                # Set file format based on file extension
-                file_format = 'JPEG' if filename.lower().endswith(('.jpg', '.jpeg')) else 'PNG'
-
-                # Save the compressed image
-                output_path = os.path.join(output_folder, filename)
-                img.save(output_path, format=file_format, quality=quality, optimize=True)
-
-    print(f"Images compressed and saved to {output_folder}")
+    return image
 
 
-# Example usage
-# ompress_images('C:\\Users\\1\\PycharmProjects\\pythonProject\\blicumcards', 'C:\\Users\\1\\PycharmProjects\\pythonProject\\blicumcardsafter', 3)
+def image_handler(folder_path, save_path, brightness_level, contrast_level, saturation_level, compression_level,
+                  operation):
+    for filename in os.listdir(folder_path):
+        image_path = os.path.join(folder_path, filename)
+        if is_image(image_path):
+            img = image_setting(image_path, brightness_level, contrast_level, saturation_level, operation)
+            quality = 95
+            if compression_level:
+                quality = int(compression_level / 100) * 95
+                img.save(os.path.join(save_path, filename), quality=quality, optimize=True)
+            img.save(os.path.join(save_path, filename), quality=quality)

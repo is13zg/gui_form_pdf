@@ -2,7 +2,7 @@ import tkinter as tk
 from tkinter import ttk, filedialog, messagebox
 from form_pdf import create_pdf
 import os
-from compress import compress_images
+from compress import image_handler
 from pdf_to_images import pdf_to_images_mupdf
 from text_to_cards import place_text_on_image
 from PIL import Image
@@ -30,7 +30,8 @@ def start_processing():
         if not (0 <= margin <= 20):
             raise ValueError("Отступ от края листа должен быть в диапазоне от 0 до 20 мм.")
         # Вызываем вашу функцию обработки с параметрами
-        create_pdf(folder, width, height, save_folder, 'create_pdf', border_width, margin, max_separation=max_sep_checkbox.get())
+        create_pdf(folder, width, height, save_folder, 'create_pdf', border_width, margin,
+                   max_separation=max_sep_checkbox.get())
         messagebox.showinfo("Успех", "Создание PDF успешно завершено.")
     except Exception as e:
         messagebox.showerror("Ошибка ввода", str(e))
@@ -44,14 +45,14 @@ tab1 = ttk.Frame(tabControl)
 tab2 = ttk.Frame(tabControl)
 tab3 = ttk.Frame(tabControl)
 tab4 = ttk.Frame(tabControl)
-tab5 = ttk.Frame(tabControl)
+#tab5 = ttk.Frame(tabControl)
 tab6 = ttk.Frame(tabControl)
 
 tabControl.add(tab1, text='Картиинки в PDF')
 tabControl.add(tab2, text='Сжать картинки')
 tabControl.add(tab3, text='Pdf на картинки')
 tabControl.add(tab4, text='Текст на карточки')
-tabControl.add(tab5, text='Повороты')
+#tabControl.add(tab5, text='Повороты')
 tabControl.add(tab6, text='Вписать картинки')
 tabControl.pack(expand=1, fill="both")
 
@@ -95,7 +96,6 @@ max_sep_checkbox.set(True)
 max_sep_сheckbutton.grid(row=4, column=1, sticky="ew")
 
 
-
 def select_source_folder(entry):
     global save_folder_path
     folder_selected = filedialog.askdirectory(initialdir=os.getcwd())
@@ -123,32 +123,50 @@ def select_folder(entry):
     entry.set(folder_selected)
 
 
-def start_compression():
-    folder = source_folder_path.get()
+def tab2_handler():
+    folder_path = source_folder_path.get()
     save_folder = save_folder_path.get()
-
     if not os.path.exists(save_folder):
         os.makedirs(save_folder)
-    compression_level = compression_level_entry.get()
+    if not folder_path:
+        messagebox.showwarning("Внимание", "Пожалуйста, выберите папку.")
+        return
     try:
-        compression_level = int(compression_level)
-        if not (1 <= compression_level <= 10):
-            raise ValueError("Степень сжатия должна быть в диапазоне от 1 до 10.")
-        # Здесь должна быть логика сжатия изображений
-        compress_images(folder, save_folder, compression_level)
-        messagebox.showinfo("Успех", "Сжатие изображений успешно завершено.")
+        image_handler(folder_path, save_folder, brightness_level=brightness_level_entry.get(),
+                      contrast_level=compression_level_entry.get(), saturation_level=saturation_level_entry.get(),
+                      compression_level=compression_level_entry.get(), operation=operation_menu.get())
+        messagebox.showinfo("Готово", "Обработка успешно выполнена!")
     except Exception as e:
-        messagebox.showerror("Ошибка", str(e))
+        messagebox.showerror("Ошибка", f"Произошла ошибка: {e}")
+
+
+
+
 
 
 # Вкладка 2: Сжатие изображений
 
-tk.Label(tab2, text="Степень сжатия [1-10]:").grid(row=0, column=0, sticky="w")
+tk.Label(tab2, text="Сжатиe [1-100]:").grid(row=0, column=0, sticky="w")
+compression_level_entry = tk.Scale(tab2, from_=0, to=100, orient=tk.HORIZONTAL, length=200)
+compression_level_entry.grid(row=0, column=1, sticky="w")
 
-compression_levels = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-compression_level_entry = ttk.Combobox(tab2, values=compression_levels, state="readonly")
-compression_level_entry.grid(row=0, column=1, sticky="ew")
-compression_level_entry.set(5)
+tk.Label(tab2, text="Яркость [1-100]:").grid(row=1, column=0, sticky="w")
+brightness_level_entry = tk.Scale(tab2, from_=0, to=100, orient=tk.HORIZONTAL, length=200)
+brightness_level_entry.grid(row=1, column=1, sticky="w")
+
+tk.Label(tab2, text="Контрастность [1-100]:").grid(row=2, column=0, sticky="w")
+contrast_level_entry = tk.Scale(tab2, from_=0, to=100, orient=tk.HORIZONTAL, length=200)
+contrast_level_entry.grid(row=2, column=1, sticky="w")
+
+tk.Label(tab2, text="Насыщенность [1-100]:").grid(row=3, column=0, sticky="w")
+saturation_level_entry = tk.Scale(tab2, from_=0, to=100, orient=tk.HORIZONTAL, length=200)
+saturation_level_entry.grid(row=3, column=1, sticky="w")
+
+tk.Label(tab2, text="Преобразование:").grid(row=4, column=0, sticky="w")
+options = ["-", "90", "180", "270", "отр. по гориз.", "отр. по верт."]
+operation_menu = ttk.Combobox(tab2, values=options, state="readonly")
+operation_menu.grid(row=4, column=1, sticky="w")
+operation_menu.set("-")
 
 
 # Вкладка 3: Извлечь картинки из PDF
@@ -290,53 +308,9 @@ tk.Label(tab4, text="Префикс результата:").grid(row=4, column=2
 ttk.Entry(tab4, textvariable=name_prefix).grid(row=4, column=3, sticky="ew")
 
 
-# Вкладка 5: Повороты
-
-def rotate_images(folder_path, operation, save_folder):
-    try:
-        for filename in os.listdir(folder_path):
-            if filename.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp', '.gif')):
-                image_path = os.path.join(folder_path, filename)
-                with Image.open(image_path) as img:
-                    if operation == '90':
-                        img_rotated = img.rotate(90, expand=True)
-                    elif operation == '180':
-                        img_rotated = img.rotate(180, expand=True)
-                    elif operation == '270':
-                        img_rotated = img.rotate(270, expand=True)
-                    elif operation == 'отр. по гориз.':
-                        img_rotated = img.transpose(Image.FLIP_LEFT_RIGHT)
-                    elif operation == 'отр. по верт.':
-                        img_rotated = img.transpose(Image.FLIP_TOP_BOTTOM)
-
-                    img_rotated.save(os.path.join(save_folder, filename))
-        messagebox.showinfo("Готово", "Операция успешно выполнена!")
-    except Exception as e:
-        messagebox.showerror("Ошибка", f"Произошла ошибка: {e}")
 
 
-def start_operation():
-    rot_folder_path = source_folder_path.get()
-    operation = operation_var.get()
-    save_folder = save_folder_path.get()
-    if not os.path.exists(save_folder):
-        os.makedirs(save_folder)
-    if not rot_folder_path:
-        messagebox.showwarning("Внимание", "Пожалуйста, выберите папку.")
-        return
-    rotate_images(rot_folder_path, operation, save_folder)
 
-
-operation_var = tk.StringVar()
-operation_var.set("90")  # Значение по умолчанию
-
-tk.Label(tab5, text="Преобразование:").grid(row=0, column=0, sticky="w")
-
-options = ["90", "180", "270", "отр. по гориз.", "отр. по верт."]
-
-operation_menu = ttk.Combobox(tab5, values=options, state="readonly")
-operation_menu.grid(row=0, column=1, sticky="ew")
-operation_menu.set("90")
 
 # Создаем общий фрейм для всех вкладок
 common_frame = tk.Frame(app)
@@ -383,7 +357,7 @@ def main_button():
     if active_tab == 0:
         start_processing()
     elif active_tab == 1:
-        start_compression()
+        tab2_handler()
     elif active_tab == 2:
         extract_images_from_pdf()
     elif active_tab == 3:
