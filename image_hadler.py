@@ -8,21 +8,21 @@ def image_setting(image_path, brightness_level, contrast_level, saturation_level
     # Открываем изображение
     image = Image.open(image_path)
 
-    if brightness_level:
+    if brightness_level != 0:
         # Приводим уровень яркости к диапазону от 1 до 2, где 1 — без изменений, 2 — удвоенная яркость
         brightness_factor = 1 + (brightness_level / 100)
         # Создаем объект для изменения яркости
         enhancer = ImageEnhance.Brightness(image)
         # Применяем изменение яркости
         image = enhancer.enhance(brightness_factor)
-    if contrast_level:
+    if contrast_level!= 0:
         # Приводим уровень контрастности к диапазону от 1 до 2, где 1 — без изменений, 2 — максимальное повышение контрастности
         contrast_factor = 1 + (contrast_level / 100)
         # Создаем объект для изменения контрастности
         enhancer = ImageEnhance.Contrast(image)
         # Применяем изменение контрастности
         image = enhancer.enhance(contrast_factor)
-    if saturation_level:
+    if saturation_level!= 0:
         # Приводим уровень контрастности к диапазону от 1 до 2, где 1 — без изменений, 2 — максимальное повышение контрастности
         saturation_factor = 1 + (saturation_level / 100)
         # Создаем объект для изменения контрастности
@@ -52,6 +52,9 @@ def image_handler(folder_path, save_path, brightness_level, contrast_level, satu
             img = image_setting(image_path, brightness_level, contrast_level, saturation_level, operation)
             quality = 95
             if compression_level:
-                quality = int(compression_level / 100) * 95
+                quality = int(compression_level*(-10/11)+96)  # Scale between 5 and 95
                 img.save(os.path.join(save_path, filename), quality=quality, optimize=True)
             img.save(os.path.join(save_path, filename), quality=quality)
+
+
+image_handler("folder", "save_folder", 1, 0, 0, 0, "-")

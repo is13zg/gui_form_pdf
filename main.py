@@ -2,7 +2,7 @@ import tkinter as tk
 from tkinter import ttk, filedialog, messagebox
 from form_pdf import create_pdf
 import os
-from compress import image_handler
+from image_hadler import image_handler
 from pdf_to_images import pdf_to_images_mupdf
 from text_to_cards import place_text_on_image
 from PIL import Image
@@ -45,14 +45,14 @@ tab1 = ttk.Frame(tabControl)
 tab2 = ttk.Frame(tabControl)
 tab3 = ttk.Frame(tabControl)
 tab4 = ttk.Frame(tabControl)
-#tab5 = ttk.Frame(tabControl)
+# tab5 = ttk.Frame(tabControl)
 tab6 = ttk.Frame(tabControl)
 
 tabControl.add(tab1, text='Картиинки в PDF')
-tabControl.add(tab2, text='Сжать картинки')
+tabControl.add(tab2, text='Обработка изображений')
 tabControl.add(tab3, text='Pdf на картинки')
 tabControl.add(tab4, text='Текст на карточки')
-#tabControl.add(tab5, text='Повороты')
+# tabControl.add(tab5, text='Повороты')
 tabControl.add(tab6, text='Вписать картинки')
 tabControl.pack(expand=1, fill="both")
 
@@ -100,19 +100,17 @@ def select_source_folder(entry):
     global save_folder_path
     folder_selected = filedialog.askdirectory(initialdir=os.getcwd())
     entry.set(folder_selected)
-    active_tab = tabControl.index("current")
+    tab_name = tabControl.tab(tabControl.index("current"), "text")
     end_path = ""
-    if active_tab == 0:
+    if tab_name == 'Картиинки в PDF':
         end_path = ""
-    elif active_tab == 1:
-        end_path = "compress_result"
-    elif active_tab == 2:
+    elif tab_name == "Обработка изображений":
+        end_path = "processed_result"
+    elif tab_name == "Pdf на картинки":
         end_path = "images_from_pdf"
-    elif active_tab == 3:
+    elif tab_name == "Текст на карточки":
         end_path = ""
-    elif active_tab == 4:
-        end_path = "rotate_result"
-    elif active_tab == 5:
+    elif tab_name == "Вписать картинки":
         end_path = "formated_images"
     to_save_folder = os.path.join(folder_selected, end_path)
     save_folder_path.set(to_save_folder)
@@ -140,26 +138,22 @@ def tab2_handler():
         messagebox.showerror("Ошибка", f"Произошла ошибка: {e}")
 
 
-
-
-
-
 # Вкладка 2: Сжатие изображений
 
-tk.Label(tab2, text="Сжатиe [1-100]:").grid(row=0, column=0, sticky="w")
+tk.Label(tab2, text="Сжатиe [1 - 100]:").grid(row=0, column=0, sticky="w")
 compression_level_entry = tk.Scale(tab2, from_=0, to=100, orient=tk.HORIZONTAL, length=200)
 compression_level_entry.grid(row=0, column=1, sticky="w")
 
-tk.Label(tab2, text="Яркость [1-100]:").grid(row=1, column=0, sticky="w")
-brightness_level_entry = tk.Scale(tab2, from_=0, to=100, orient=tk.HORIZONTAL, length=200)
+tk.Label(tab2, text="Яркость [-100 - 100]:").grid(row=1, column=0, sticky="w")
+brightness_level_entry = tk.Scale(tab2, from_=-100, to=100, orient=tk.HORIZONTAL, length=200)
 brightness_level_entry.grid(row=1, column=1, sticky="w")
 
-tk.Label(tab2, text="Контрастность [1-100]:").grid(row=2, column=0, sticky="w")
-contrast_level_entry = tk.Scale(tab2, from_=0, to=100, orient=tk.HORIZONTAL, length=200)
+tk.Label(tab2, text="Контрастность [-100 - 100]:").grid(row=2, column=0, sticky="w")
+contrast_level_entry = tk.Scale(tab2, from_=-100, to=100, orient=tk.HORIZONTAL, length=200)
 contrast_level_entry.grid(row=2, column=1, sticky="w")
 
-tk.Label(tab2, text="Насыщенность [1-100]:").grid(row=3, column=0, sticky="w")
-saturation_level_entry = tk.Scale(tab2, from_=0, to=100, orient=tk.HORIZONTAL, length=200)
+tk.Label(tab2, text="Насыщенность [-100 - 100]:").grid(row=3, column=0, sticky="w")
+saturation_level_entry = tk.Scale(tab2, from_=-100, to=100, orient=tk.HORIZONTAL, length=200)
 saturation_level_entry.grid(row=3, column=1, sticky="w")
 
 tk.Label(tab2, text="Преобразование:").grid(row=4, column=0, sticky="w")
@@ -179,7 +173,6 @@ def select_pdf_file():
 
 
 def extract_images_from_pdf():
-    # Заглушка для функции извлечения изображений
     start_page = int(start_page_entry.get())
     end_page = int(end_page_entry.get())
     step = int(step_entry.get())
@@ -307,11 +300,6 @@ ttk.Button(tab4, text="Копировать", command=copy_to_clipboard).grid(ro
 tk.Label(tab4, text="Префикс результата:").grid(row=4, column=2, sticky="w")
 ttk.Entry(tab4, textvariable=name_prefix).grid(row=4, column=3, sticky="ew")
 
-
-
-
-
-
 # Создаем общий фрейм для всех вкладок
 common_frame = tk.Frame(app)
 common_frame.pack(side=tk.TOP, fill=tk.X)
@@ -353,18 +341,16 @@ cut_images = tk.BooleanVar()
 
 #  общий фрейм
 def main_button():
-    active_tab = tabControl.index("current")
-    if active_tab == 0:
+    tab_name = tabControl.tab(tabControl.index("current"), "text")
+    if tab_name == 'Картиинки в PDF':
         start_processing()
-    elif active_tab == 1:
+    elif tab_name == "Обработка изображений":
         tab2_handler()
-    elif active_tab == 2:
+    elif tab_name == "Pdf на картинки":
         extract_images_from_pdf()
-    elif active_tab == 3:
+    elif tab_name == "Текст на карточки":
         submit_data()
-    elif active_tab == 4:
-        start_operation()
-    elif active_tab == 5:
+    elif tab_name == "Вписать картинки":
         start_format_images()
 
 
