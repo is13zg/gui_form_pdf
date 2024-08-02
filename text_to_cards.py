@@ -1,7 +1,12 @@
 from PIL import Image, ImageDraw, ImageFont
 import textwrap
 import os
+import sys
 
+def resource_path(relative):
+    if hasattr(sys, "_MEIPASS"):
+        return os.path.join(sys._MEIPASS, relative)
+    return os.path.join(relative)
 
 def try_set_custom_font(font_path, font_size):
     try:
@@ -9,8 +14,9 @@ def try_set_custom_font(font_path, font_size):
         custom_font = ImageFont.truetype(font_path, font_size)
         return custom_font
     except (IOError, OSError) as e:
+        return ImageFont.truetype(resource_path('TildaSans-Medium.ttf'), font_size)
         # Файл шрифта не найден, возвращаем None
-        return ImageFont.load_default()
+
 
 
 def calculate_text_parameters(font_path, text, image_size, initial_font_size=194):
