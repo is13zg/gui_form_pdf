@@ -129,7 +129,8 @@ def tab2_handler():
     try:
         image_handler(folder_path, save_folder, brightness_level=brightness_level_entry.get(),
                       contrast_level=contrast_level_entry.get(), saturation_level=saturation_level_entry.get(),
-                      compression_level=compression_level_entry.get(), operation=operation_menu.get())
+                      compression_level=compression_level_entry.get(), operation=operation_menu.get(),
+                      numeration=numeration_menu.get())
         messagebox.showinfo("Готово", "Обработка успешно выполнена!")
     except Exception as e:
         messagebox.showerror("Ошибка", f"Произошла ошибка: {e}")
@@ -158,6 +159,12 @@ options = ["-", "90", "180", "270", "отр. по гориз.", "отр. по в
 operation_menu = ttk.Combobox(tab2, values=options, state="readonly")
 operation_menu.grid(row=4, column=1, sticky="w")
 operation_menu.set("-")
+
+tk.Label(tab2, text="Нумерация:").grid(row=5, column=0, sticky="w")
+options = ["-", "1", "2", "3"]
+numeration_menu = ttk.Combobox(tab2, values=options, state="readonly")
+numeration_menu.grid(row=5, column=1, sticky="w")
+numeration_menu.set("-")
 
 
 # Вкладка 3: Извлечь картинки из PDF

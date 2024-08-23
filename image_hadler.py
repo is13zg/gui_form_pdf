@@ -1,6 +1,9 @@
 import os
 from PIL import Image, ImageEnhance
 from images_into_cards import is_image
+from PIL import ImageDraw, ImageFont
+from text_to_cards import try_set_custom_font
+import math
 
 
 def image_setting(image_path, brightness_level, contrast_level, saturation_level, operation):
@@ -43,13 +46,62 @@ def image_setting(image_path, brightness_level, contrast_level, saturation_level
     return image
 
 
+def add_image_number(image, number, size_percentage, padding_percentage):
+    draw = ImageDraw.Draw(image)
+
+    # Размер изображения
+    width, height = image.size
+
+    # Размер номера в процентах от площади изображения
+    font_size = int(math.sqrt(width * height) * size_percentage / 100)
+
+    # Задаем шрифт и размер текста
+    font = try_set_custom_font("", font_size)
+
+    # Размер текста
+    text = str(number)
+    text_width, text_height = font.getbbox(text)[2] - font.getbbox(text)[0], font.getbbox(text)[3] - font.getbbox(text)[
+        1]
+
+    # Диаметр круга
+    circle_diameter = max(text_width, text_height) + int(0.4 * font_size)
+
+    # Позиция текста (правый верхний угол с отступом в процентах от размера изображения)
+    padding = int(min(width, height) * padding_percentage / 100)
+    position = (width - circle_diameter - padding, padding)
+
+    # Позиция и размеры круга
+    circle_position = [
+        position[0], position[1] * 1.3,
+                     position[0] + circle_diameter, position[1] * 1.3 + circle_diameter
+    ]
+
+    # Рисуем круг
+    draw.ellipse(circle_position, fill="black")
+
+    # Позиция текста внутри круга (центр круга)
+    text_position = (
+        position[0] + (circle_diameter - text_width) // 2,
+        position[1] + (circle_diameter - text_height) // 2
+    )
+
+    # Добавляем текст (номер изображения)
+    draw.text(text_position, text, fill="white", font=font)
+
+    return image
+
+
 def image_handler(folder_path, save_path, brightness_level, contrast_level, saturation_level, compression_level,
-                  operation):
-    for filename in os.listdir(folder_path):
+                  operation, numeration):
+    for i, filename in enumerate(os.listdir(folder_path)):
         image_path = os.path.join(folder_path, filename)
         if is_image(image_path):
             img = image_setting(image_path, brightness_level, contrast_level, saturation_level, operation)
             quality = 95
+
+            if numeration != "-":
+                img = add_image_number(img, i + 1, 3 * float(numeration), 2 * float(numeration))
+
             if compression_level:
                 quality = int(compression_level * (-10 / 11) + 96)  # Scale between 5 and 95
                 img.save(os.path.join(save_path, filename), quality=quality, optimize=True)
